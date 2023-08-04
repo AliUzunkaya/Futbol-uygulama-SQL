@@ -1,0 +1,157 @@
+Futbol İstatistik Uygulaması
+Country: id, name
+Lig: id, adı, id_country(hangi ülkenin ligi)
+Takim: id, adı, id_leauge, kuruluş yılı, attığı gol, yediği gol, puan, seviye(1=en üst lig, 2, onun bir
+alt ligi gibi)
+Oyuncu: id, adı, soyadı, id_team, id_country(nereli), attığı gol
+1. Yukarıdaki tabloların create scriptlerini oluşturunuz.
+2. Bu tabloları dolduran insert scriptler yazınız. Ligi olmayan takım
+3. İsmi “Türkiye” olan ülkenin liglerinin listesini getiren scripti yazınız.
+4. İsmi “Türkiye” olan ülkenin takımların listesini getiren scripti yazınız.
+5. İsmi “Türkiye” olan en üst seviyeli ligdeki puan tablosunu getiren scripti yazınız.
+6. Türkiye liglerindeki puan ortalamalarını gösteren scrpiti yazınız.
+7. Bir ligin Gol kralını getiren scprit yazınız. (oyuncu adı, soyadı, takım adı, nereli olduğu)
+8. Tüm liglerde attığı gol yediği golden daha küçük olan takımları getiren scripti yazınız.
+9. Bir takımın oyuncularının toplam gol sayısını ve takımın gol sayısını yan yana getiren bir
+scprit yazınız. (kontrol sorgusu gibi, birisi takım verisi, diğeri oyuncuların toplamı olacak)
+
+CEVAPLAR:::::
+1---İNSERT SCRİPT---
+1.1)COUNTRY için:
+CREATE TABLE Country (
+    id INT PRIMARY KEY,
+    name VARCHAR(255)
+);
+1.2) LİG İÇİN:
+CREATE TABLE Lig (
+    id INT PRIMARY KEY,
+    adı VARCHAR(255),
+    id_country INT,
+    FOREIGN KEY (id_country) REFERENCES Country(id)
+);
+1.3) TAKIM İÇİN:
+CREATE TABLE Takim (
+    id INT PRIMARY KEY,
+    adı VARCHAR(255),
+    id_league INT,
+    kurulus_yili INT,
+    attigi_gol INT,
+    yedigi_gol INT,
+    puan INT,
+    seviye INT,
+    FOREIGN KEY (id_league) REFERENCES Lig(id)
+);
+1.4) OYUNCU İÇİN:
+CREATE TABLE Oyuncu (
+    id INT PRIMARY KEY,
+    adı VARCHAR(255),
+    soyadı VARCHAR(255),
+    id_team INT,
+    id_country INT,
+    attigi_gol INT,
+    FOREIGN KEY (id_team) REFERENCES Takim(id),
+    FOREIGN KEY (id_country) REFERENCES Country(id)
+);
+2----İNSERT SCRİPT----
+
+2.1)COUNTRY için:
+INSERT INTO Country (id, name) VALUES
+    (1, 'Türkiye'),
+    (2, 'İngiltere'),
+    (3, 'İspanya');
+2.2) LİG İÇİN:
+INSERT INTO Lig (id, adı, id_country) VALUES
+    (1, 'Süper Lig', 1),
+    (2, '1. Lig', 1),
+    (3, 'Premier League', 2),
+    (4, 'La Liga', 3);
+2.3) TAKIM İÇİN:
+INSERT INTO Takim (id, adı, id_league, kurulus_yili, attigi_gol, yedigi_gol, puan, seviye) VALUES
+(1, 'Galatasaray', 1, 1905, 50, 20, 70, 1),
+(2, 'Fenerbahçe', 1, 1907, 75, 25, 88, 1),
+(3, 'Beşiktaş', 1, 1903, 60, 18, 75, 1),
+(4, 'Trabzonspor', 1, 1967, 48, 22, 65, 1),
+(5, 'Ankaragücü', 2, 1911, 40, 35, 50, 2),
+(6, 'Bursaspor', 2, 1963, 35, 30, 45, 2);
+2.4) OYUNCU İÇİN:
+INSERT INTO Oyuncu (id, adı, soyadı, id_team, id_country, attigi_gol) VALUES
+(1, 'Kerem', 'Aktürkoğlu', 1, 1, 10),
+(2, 'Enner', 'Valencia', 2, 1, 8),
+(3, 'Edin', 'Dzeko', 2, 1, 15),
+(4, 'Dusan', 'Tadic', 2, 1, 5),
+(5, 'Ali', 'Uzunkaya', 2, 1, 3),
+(6, 'Murat', 'Yıldırım', 5, 1, 7),
+(7, 'Selim', 'Bilgin', 6, 1, 4);
+
+3)---İsmi “Türkiye” olan ülkenin liglerinin listesini getiren scripti----
+
+SELECT Lig.adı
+FROM Lig
+WHERE Lig.id_country IN (
+    SELECT id
+    FROM Country
+    WHERE name = 'Türkiye'
+);
+
+4)---İsmi “Türkiye” olan ülkenin takımların listesini getiren scripti yazınız---
+
+SELECT Takim.adı
+FROM Takim, Lig, Country
+WHERE Takim.id_league = Lig.id
+AND Lig.id_country = Country.id
+AND Country.name = 'Türkiye';
+5)---İsmi “Türkiye” olan en üst seviyeli ligdeki puan tablosunu getiren scripti----
+
+SELECT Takim.adı, Takim.puan
+FROM Takim, Lig, Country
+WHERE Takim.id_league = Lig.id
+  AND Lig.id_country = Country.id
+  AND Country.name = 'Türkiye'
+  AND Lig.seviye = 1
+ORDER BY Takim.puan DESC;
+
+6)----Türkiye liglerindeki puan ortalamalarını gösteren scrpiti-----
+
+SELECT Lig.adı, (
+    SELECT AVG(Takim.puan)
+    FROM Takim
+    WHERE Takim.id_league = Lig.id
+) AS ortalama_puan
+FROM Lig
+WHERE Lig.id_country IN (
+    SELECT id
+    FROM Country
+    WHERE name = 'Türkiye'
+)
+ORDER BY Lig.adı;
+
+7)---Bir ligin Gol kralını getiren scprit-----
+
+SELECT Oyuncu.adı, Oyuncu.soyadı, Takim.adı AS takım_adı, Country.name AS nereli_oluğu
+FROM Oyuncu, Takim, Country
+WHERE Oyuncu.id_team = Takim.id
+AND Oyuncu.id_country = Country.id
+AND Takim.id_league = 1
+AND Oyuncu.attigi_gol = (
+    SELECT MAX(attigi_gol)
+    FROM Oyuncu
+    WHERE id_team IN (
+        SELECT id
+        FROM Takim
+        WHERE id_league = 1
+    )
+)
+LIMIT 1;
+8)----Tüm liglerde attığı gol yediği golden daha küçük olan takımları getiren script---
+SELECT Takim.adı
+FROM Takim
+WHERE attigi_gol < yedigi_gol;
+
+9)----Bir takımın oyuncularının toplam gol sayısını ve takımın gol sayısını yan yana getiren bir
+scprit-----
+
+SELECT Takim.adı, 
+       (SELECT SUM(attigi_gol) FROM Oyuncu WHERE Oyuncu.id_team = Takim.id) AS takim_gol_sayisi,
+       Takim.attigi_gol AS takim_toplam_gol
+FROM Takim
+WHERE Takim.id = 2;
